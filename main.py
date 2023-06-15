@@ -23,6 +23,7 @@ except FileNotFoundError:
     
 ins = InsClawer()
 
+
 def DataExaction(ins, user_input, amount): 
     ins.getMediasTopData(user_input, amount= amount)
     ins.getUserData()
@@ -47,13 +48,17 @@ col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to run th
 username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
+user_name = username
+
 col4.write("")
 col4.write("")
 login_btn_clicked = col4.button('Login', help="Click to log in")
 
 # login
 if login_btn_clicked:
-    ins.clientLogin(username, password)
+    user_name = username
+    
+    
 #---- SIDEBAR -----#
 st.sidebar.empty()
 st.sidebar.header("Please filter here:")
@@ -75,7 +80,7 @@ st.write("")
 st.write("")
 left_col, right_col = st.columns(2)
 left_col.subheader(f"Total: {total_data} 👤")
-right_col.subheader(f"Logged as: {username}")
+right_col.subheader(f"Logged as: {user_name}")
 st.markdown("---")
 
 left_column, right_column = st.columns([2,1])
@@ -89,6 +94,7 @@ start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
+    ins.clientLogin(username, password)
     DataExaction(ins, user_input, amount)
     
 right_column.text("Download the filtered data 👇")
