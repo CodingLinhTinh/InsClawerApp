@@ -1,28 +1,52 @@
 from instagrapi import Client
 import pandas as pd
-from instagrapi.exceptions import RateLimitError
+from langdetect import detect
+import pycountry
 import time 
+import re
 
 class InsClawer:
     def __init__(self):
         self.client = Client()
+        
         self.data = None 
         self.output = []
         self.username = ""
+        self.error = None
+        
+    def is_in_germany(self, location):
+        try:
+            country_code = pycountry.countries.search_fuzzy(location).alpha_2
+            if country_code == 'DE':
+                return True
+            else:
+                return False
+        except LookupError:
+            return False
+        
+    def classify_language(self, bio, location):
+        try:
+            lang = detect(bio)
+            if lang == "de" or self.is_in_germany(location):
+                return "German"
+            if lang == "en":
+                return "English"
+        except:
+            return "Other"
     
     def clientLogin(self ,username, password):
         try:        
             self.client.load_settings("session.json")
             self.client.login(username, password)
             self.client.get_timeline_feed()
-               
-        except RateLimitError:
-            # Wait for a few minutes before retrying
-            wait_time_minutes = 5
-            print(f"Rate limit exceeded. Waiting for {wait_time_minutes} minutes...")
-            time.sleep(wait_time_minutes * 60) # Convert minutes to seconds
+            
+        except Exception as e:
+            self.error = e
+            wait_time_minutes = 60
+            time.sleep(wait_time_minutes * 60)
 
     def getUserName(self):
+        self.client.delay_range = [1,3]
         self.username = self.client.account_info().dict()["username"]
     
     def clientLogout(self):
@@ -30,33 +54,49 @@ class InsClawer:
         
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
+        self.client.delay_range = [1,3]
         self.data = self.client.hashtag_medias_top(user_input, amount=amount)
+        time.sleep(5)
+    
+    def getFollowers(self, username):
+        self.client.delay_range = [1,3]
+        follower_count = self.client.user_info_by_username(username).dict()
+        return follower_count["follower_count"]
     
     def getUserData(self):
         for d in self.data:
             data            = d.dict()
-            pk              = data['user']['pk']
+            pk              = int( data["user"]["pk"] )
             username        = data['user']['username']
             full_name       = data['user']['full_name']
-            profile_pic_url = data['user']['profile_pic_url']
-
-            caption         = data['caption_text']
-            hashtags        = [tag for tag in caption.split() if tag.startswith('#')]
-        
+            biography       = data['caption_text']
+            hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
             location        = data['location'] 
-            location_name   = None 
-
+            follower_count  = self.getFollowers(username)
+            
+            
+            location_name   = None
+            email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
+            phone           = re.findall(r'\b\d{10,11}\b', biography)
+            
+            
             if location is not None:
                 location_name   = location['name']
+            else: 
+                location_name = ""
+            
+            
                 
             self.output.append({
-                "pk":               pk,
-                "username":         username,
-                "full_name":        full_name,
-                "profile_pic_url":  profile_pic_url,
-                "caption":          caption,
-                "hashtags":         hashtags,
-                "location_name":    location_name,
+                "Username":     username,
+                "Full name":    full_name,
+                "Email":        email,
+                "Phone":        phone,
+                "Biography":    biography,
+                "City":         location_name,
+                "Followers":    follower_count,
+                "Hashtags":     hashtags,
+                "Language":     self.classify_language(biography, location_name)
             })
             
     def createCSV(self, file_path):

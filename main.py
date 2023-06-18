@@ -1,50 +1,79 @@
 from InsClawer import InsClawer
 import streamlit as st
 import pandas as pd
+from PIL import Image
+from instagrapi.exceptions import ChallengeRequired
+import time
 
-# user_name       = "amyquach48"
-# password        = "amyquach2002"
+# user_name       = "amy.quach.ngoc"
+# password        = "Ngoc2002"
+# '''
+# Just to give you a better overview: 
+# () is always an opinion:
+
+# Leads finder parameters: 
+# Username|Full Name| E-Mail| Phone | Biography | City | Followers
+# (I also like the hashtag parameter currently this can be kept in process)
+# (if there is any possibility to get Engagement Rate as Parameter it would be awesome)
+
+# Scraping: 
+# Follower Slider for Audience Quality Check | 
+# Language Filtering (German, English)| 
+# CSV Export (if possible also as TXT additional, if not no worries)
+
+# Scraper Cache Clearing to reset the scraped Data's for better Overview
+# Logo Branding and Favicon DONE
+
+# And maybe more pertinent login process, so it gets a smoother flow
+# a list of the csv which have been created and with and with checkbox they can choose which csv they want to combine into a file if possible would be really efficient
+
+# '''
 file_path       = "data.csv"
 
 try:
     df = pd.read_csv(file_path)
-except FileNotFoundError:
+    
+except FileNotFoundError or pd.errors.EmptyDataError:
     data = {
-        'pk': [],
-        'username': [],
-        'full_name': [],
-        'profile_pic_url': [],
-        'caption': [],
-        'hashtags': [],
-        'location_name': []
+        "Username":     [],
+        "Full name":    [],
+        "Email":        [],
+        "Phone":        [],
+        "Biography":    [],
+        "City":         [],
+        "Followers":    [],
+        "Hashtags":     [],
+        "Language":     []
     }
 
     df = pd.DataFrame(data)
-    
-ins = InsClawer()
 
-
-def DataExaction(ins, user_input, amount): 
-    ins.getMediasTopData(user_input, amount= amount)
-    ins.getUserData()
-    ins.createCSV(file_path=file_path)
-
+ins = InsClawer() 
 
 
 st.set_page_config(page_title="Instagram CSV", 
-                    page_icon="favicon.ico",
+                    page_icon="logo.ico",
                     layout="wide")
 
 
 
 #---- MAIN PAGE -----#
-st.title("🖥️🖥️ Dashboard")
+left, right= st.columns([1,6], gap="small")
+image = Image.open('logo.png')
+
+left.image(image, width=100)
+
+right.write("")
+right.write("")
+
+right.title("AI GROWTH CO.")
+
 st.markdown("##")
 st.markdown("---")
 
 col1,col2,col3,col4 = st.columns([2,1,1,1])
 
-col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to run the Exactor")
+col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to be able to run the Exactor")
 username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
@@ -56,24 +85,37 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 
 # login
 if login_btn_clicked:
-    user_name = username
+    user_name = user_name + "✅"
     
     
 #---- SIDEBAR -----#
 st.sidebar.empty()
 st.sidebar.header("Please filter here:")
+
 location_name = st.sidebar.multiselect(
-    "Select Location Name:",
-    options= sorted([str(x) for x in df["location_name"].unique()] + ["All"]),
+    "Select City Name:",
+    options= sorted([str(x) for x in df["City"].unique()] + ["All"]),
     default=["All"],
     key="location_multiselect",
 )
 
+language = st.sidebar.multiselect(
+    "Select Language Audience:",
+    options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
+    default=["All"],
+    key="language_multiselect",
+)
+
 if "All" in location_name:
     # If "All" is selected, set location_name to all unique options
-    location_name = list(df["location_name"].unique())
+    location_name = list(df["City"].unique())
 
-df_selection = df[df["location_name"].isin(location_name)]
+if "All" in language:
+    # If "All" is selected, set location_name to all unique options
+    language = list(df["Language"].unique())
+
+df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
+
 total_data = len(df_selection)
 
 st.write("")
@@ -95,11 +137,28 @@ start_btn_clicked = right_column.button("Start")
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
     ins.clientLogin(username, password)
-    DataExaction(ins, user_input, amount)
+    try:
+        progress_text = "Operation in progress. Please wait."
+        my_bar = st.progress(0, text=progress_text)
+
+        for percent_complete in range(amount):
+            time.sleep(0.1)
+            my_bar.progress(percent_complete + 1, text=progress_text)
+            
+            ins.getMediasTopData(user_input, amount= 1)
+            # append vào Output
+            ins.getUserData()
+            
+        ins.createCSV(file_path=file_path)
+    except ChallengeRequired:
+        pass
     
-right_column.text("Download the filtered data 👇")
+
+# Download the data
+st.write("")
+st.text("Download the filtered data 👇")
 # Tải bản csv đã filter về máy
-download_file_btn = right_column.download_button(
+download_file_btn = st.download_button(
     label="Download data as CSV",
     data = df_selection.to_csv().encode('utf-8'),
     file_name='data.csv',
