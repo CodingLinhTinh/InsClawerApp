@@ -10,7 +10,6 @@
 
 ## 🧐 Authors
 **Author**: Ngoc Quach Bao - Nicole Quach
-**Role**: Main Developer
 
 
 ## 🖼️ UI
