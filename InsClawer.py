@@ -29,8 +29,6 @@ class InsClawer:
             lang = detect(bio)
             if lang == "de" or self.is_in_germany(location):
                 return "German"
-            if lang == "en":
-                return "English"
         except:
             return "Other"
     
@@ -86,18 +84,18 @@ class InsClawer:
                 location_name = ""
             
             
-                
-            self.output.append({
-                "Username":     username,
-                "Full name":    full_name,
-                "Email":        email,
-                "Phone":        phone,
-                "Biography":    biography,
-                "City":         location_name,
-                "Followers":    follower_count,
-                "Hashtags":     hashtags,
-                "Language":     self.classify_language(biography, location_name)
-            })
+            if username not in self.output:
+                self.output.append({
+                    "Username":     username,
+                    "Full name":    full_name,
+                    "Email":        email,
+                    "Phone":        phone,
+                    "Biography":    biography,
+                    "City":         location_name,
+                    "Followers":    follower_count,
+                    "Hashtags":     hashtags,
+                    "Language":     self.classify_language(biography, location_name)
+                })
             
     def createCSV(self, file_path):
         # Đọc dữ liệu từ file CSV đã tồn tại (nếu có)

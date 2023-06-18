@@ -26,11 +26,13 @@
 
 ## ⚙️ Guides
 ### Install
+
 <code>
     python -r install requirements.txt
 </code>
 
 ### Run
+
 <code>
     streamlit run main.py
 </code>
@@ -42,4 +44,4 @@ TODO:
 ## License
 This project is licensed under the ISC License.
 
-## 🌸🌸 If you love this, please give it a star. I would greatly appreciate it. ⭐⭐⭐
+### 🌸🌸 If you love this, please give it a star. I would greatly appreciate it. ⭐⭐⭐
