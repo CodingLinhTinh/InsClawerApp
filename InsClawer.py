@@ -17,6 +17,7 @@ class InsClawer:
     def is_in_germany(self, location):
         try:
             country_code = pycountry.countries.search_fuzzy(location).alpha_2
+            print(country_code)
             if country_code == 'DE':
                 return True
             else:

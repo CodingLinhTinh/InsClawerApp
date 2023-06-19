@@ -144,8 +144,10 @@ if start_btn_clicked and amount > 0:
         for percent_complete in range(amount):
             time.sleep(0.1)
             my_bar.progress(percent_complete + 1, text=f"{progress_text} ({percent_complete + 1}%)")
-            
-            ins.getMediasTopData(user_input, amount = 100)
+            try:
+                ins.getMediasTopData(user_input, amount = 100)
+            except Exception as e:
+                st.error(e, icon="🚨")
             # append vào Output
             ins.getUserData()
             
