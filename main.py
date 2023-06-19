@@ -145,9 +145,12 @@ if start_btn_clicked and amount > 0:
             time.sleep(0.1)
             my_bar.progress(percent_complete + 1, text=f"{progress_text} ({percent_complete + 1}%)")
             try:
-                ins.getMediasTopData(user_input, amount = 100)
+                ins.getMediasTopData(user_input, amount = 1)
             except Exception as e:
-                st.error(e, icon="🚨")
+                if "feedback_required" in str(e):
+                    st.error("Instagram requires feedback. Stopping for 5 mins", icon="🚨")
+                    time.sleep(5*60)
+            
             # append vào Output
             ins.getUserData()
             
