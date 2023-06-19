@@ -7,6 +7,7 @@ import time
 
 # user_name       = "amy.quach.ngoc"
 # password        = "Ngoc2002"
+# keyword         = "lustige katzen"
 # '''
 # Just to give you a better overview: 
 # () is always an opinion:
@@ -99,23 +100,23 @@ location_name = st.sidebar.multiselect(
     key="location_multiselect",
 )
 
-language = st.sidebar.multiselect(
-    "Select Language Audience:",
-    options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
-    default=["All"],
-    key="language_multiselect",
-)
+# language = st.sidebar.multiselect(
+#     "Select Language Audience:",
+#     options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
+#     default=["All"],
+#     key="language_multiselect",
+# )
 
 if "All" in location_name:
     # If "All" is selected, set location_name to all unique options
     location_name = list(df["City"].unique())
 
-if "All" in language:
-    # If "All" is selected, set location_name to all unique options
-    language = list(df["Language"].unique())
+# if "All" in language:
+#     # If "All" is selected, set location_name to all unique options
+#     language = list(df["Language"].unique())
 
-df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
-
+# df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
+df_selection = df[df["City"].isin(location_name)]
 total_data = len(df_selection)
 
 st.write("")
@@ -131,33 +132,39 @@ left_column.dataframe(df_selection)
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input:")
-amount = int(right_column.slider('Amount users', 0, 100))
+amount = int(right_column.slider('Amount users:', 0, 100))
 start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
     ins.clientLogin(username, password)
     try:
-        progress_text = "Operation in progress. Please wait."
+        progress_text = "Operation in progress. Please wait..."
         my_bar = st.progress(0, text=progress_text)
 
-        for percent_complete in range(amount):
+        for percent_complete in range(amount + 1):
             time.sleep(0.1)
-            my_bar.progress(percent_complete + 1, text=f"{progress_text} ({percent_complete + 1}%)")
+            progress_value = round(percent_complete / amount, 2)
+            if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
+                progress_value = 1.0
+            my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
             try:
-                ins.getMediasTopData(user_input, amount = 1)
+                user_input = user_input.replace(" ", "").lower()
+                ins.getMediasTopData(user_input, amount = 100)
+                # append vào Output
+                ins.getUserData()
             except Exception as e:
                 if "feedback_required" in str(e):
-                    st.error("Instagram requires feedback. Stopping for 5 mins", icon="🚨")
+                    st.error("Instagram requires feedback. Stopping for 5 mins then refresh the page", icon="🚨")
                     time.sleep(5*60)
             
-            # append vào Output
-            ins.getUserData()
+
             
         ins.createCSV(file_path=file_path)
+        ins.remove_duplicates_csv(file_path=file_path, columns_to_check= ["Username", "Full name"])
     except ChallengeRequired:
         pass
-    
+
 
 # Download the data
 st.write("")

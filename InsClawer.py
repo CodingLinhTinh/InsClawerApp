@@ -1,7 +1,7 @@
 from instagrapi import Client
 import pandas as pd
 from langdetect import detect
-import pycountry
+from geopy.geocoders import Nominatim
 import time 
 import re
 
@@ -14,24 +14,22 @@ class InsClawer:
         self.username = ""
         self.error = None
         
-    def is_in_germany(self, location):
-        try:
-            country_code = pycountry.countries.search_fuzzy(location).alpha_2
-            print(country_code)
-            if country_code == 'DE':
+    def get_country_name(self, location):
+        geolocator = Nominatim(user_agent="my_app")
+        location_data = geolocator.geocode(location, exactly_one=True)
+        if location_data:
+            is_germany = location_data.raw['display_name'].split(",")[-1].strip()
+            if is_germany == "Deutschland":
                 return True
-            else:
-                return False
-        except LookupError:
-            return False
+        return False
         
-    def classify_language(self, bio, location):
+    def classify_language(self, bio):
         try:
             lang = detect(bio)
-            if lang == "de" or self.is_in_germany(location):
-                return "German"
+            if lang == "de":
+                return True
         except:
-            return "Other"
+            return False
     
     def clientLogin(self ,username, password):
         try:        
@@ -54,7 +52,7 @@ class InsClawer:
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
         self.client.delay_range = [1,3]
-        self.data = self.client.hashtag_medias_top(user_input, amount=amount)
+        self.data = self.client.hashtag_medias_recent(user_input, amount=amount)
         time.sleep(5)
     
     def getFollowers(self, username):
@@ -75,14 +73,23 @@ class InsClawer:
             
             
             location_name   = None
+            language = ""
             email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
             phone           = re.findall(r'\b\d{10,11}\b', biography)
             
             
             if location is not None:
                 location_name   = location['name']
+                if self.get_country_name(location_name):
+                    language = "German"
+                else:
+                    language = "Others"
             else: 
                 location_name = ""
+                if self.classify_language(biography):
+                    language = "German"
+                else:
+                    language = "Others"
             
             
             if username not in self.output:
@@ -95,7 +102,7 @@ class InsClawer:
                     "City":         location_name,
                     "Followers":    follower_count,
                     "Hashtags":     hashtags,
-                    "Language":     self.classify_language(biography, location_name)
+                    "Language":     language
                 })
             
     def createCSV(self, file_path):
@@ -109,16 +116,24 @@ class InsClawer:
         # Tạo DataFrame từ dữ liệu mới
         new_data = pd.DataFrame(self.output)
 
-        # Kiểm tra và loại bỏ các dữ liệu trùng lặp
-        if not existing_data.empty:
-            columns_to_check = ['username', 'full_name']
-            new_data = new_data.drop_duplicates(subset=columns_to_check)
-
         # Kết hợp dữ liệu cũ và dữ liệu mới
         combined_data = pd.concat([existing_data, new_data], ignore_index=True)
 
         # Ghi dữ liệu vào file CSV
         combined_data.to_csv(file_path, index=False, encoding='utf-8')
+    
+    def remove_duplicates_csv(self, file_path, columns_to_check):
+        # Đọc dữ liệu từ file CSV
+        data = pd.read_csv(file_path)
+        
+        # Kiểm tra và loại bỏ các dữ liệu trùng lặp dựa trên các cột được chỉ định
+        if all(col in data.columns for col in columns_to_check):
+            data = data.drop_duplicates(subset=columns_to_check)
+        
+        # Ghi dữ liệu đã loại bỏ trùng lặp vào file CSV mới
+        data.to_csv(file_path, index=False)
+    
+    
     
     
     
