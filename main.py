@@ -49,8 +49,7 @@ except FileNotFoundError or pd.errors.EmptyDataError:
 
     df = pd.DataFrame(data)
 
-ins = InsClawer() 
-
+ins = InsClawer()
 
 st.set_page_config(page_title="Instagram CSV", 
                     page_icon="logo.ico",
@@ -100,23 +99,74 @@ location_name = st.sidebar.multiselect(
     key="location_multiselect",
 )
 
-# language = st.sidebar.multiselect(
-#     "Select Language Audience:",
-#     options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
-#     default=["All"],
-#     key="language_multiselect",
-# )
+language = st.sidebar.multiselect(
+    "Select Language Audience:",
+    options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
+    default=["All"],
+    key="language_multiselect",
+)
 
 if "All" in location_name:
     # If "All" is selected, set location_name to all unique options
     location_name = list(df["City"].unique())
 
-# if "All" in language:
-#     # If "All" is selected, set location_name to all unique options
-#     language = list(df["Language"].unique())
+if "All" in language:
+    # If "All" is selected, set location_name to all unique options
+    language = list(df["Language"].unique())
 
-# df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
-df_selection = df[df["City"].isin(location_name)]
+
+
+# Multi checkbox displaying data
+st.sidebar.header("Please select display elements:")
+
+username_ckBox = st.sidebar.checkbox('Username')
+fullname_ckBox = st.sidebar.checkbox('Full name')
+email_ckBox = st.sidebar.checkbox('Email')
+phone_ckBox = st.sidebar.checkbox('Phone number')
+followers_ckBox = st.sidebar.checkbox('Followers')
+bio_ckBox = st.sidebar.checkbox('Biography')
+lang_ckBox = st.sidebar.checkbox('Language')
+city_ckBox = st.sidebar.checkbox('City')
+hashtag_ckBox = st.sidebar.checkbox('Hashtags')
+
+# List of selected columns
+selected_columns = []
+
+# Add selected columns to the list
+if username_ckBox:
+    selected_columns.append('Username')
+
+if fullname_ckBox:
+    selected_columns.append('Full name')
+
+if email_ckBox:
+    selected_columns.append('Email')
+
+if phone_ckBox:
+    selected_columns.append('Phone')
+
+if followers_ckBox:
+    selected_columns.append('Followers')
+
+if bio_ckBox:
+    selected_columns.append('Biography')
+
+if lang_ckBox:
+    selected_columns.append('Language')
+
+if city_ckBox:
+    selected_columns.append('City')
+    
+if hashtag_ckBox:
+    selected_columns.append('Hashtags')
+    
+
+# Lọc dữ liệu theo location_name và language
+df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
+
+df_selection = df_selection[selected_columns]
+
+
 total_data = len(df_selection)
 
 st.write("")
@@ -128,6 +178,7 @@ st.markdown("---")
 
 left_column, right_column = st.columns([2,1])
 left_column.dataframe(df_selection)
+
 
 # Exact data
 right_column.subheader("Data Exactor")
@@ -169,10 +220,22 @@ if start_btn_clicked and amount > 0:
 # Download the data
 st.write("")
 st.text("Download the filtered data 👇")
+
+# Filter DataFrame based on selected columns
+df_export = df_selection
+
+# Remove columns not selected (unchecked)
+
+unchecked_columns = set(df.columns) - set(selected_columns)
+try:
+    df_export.drop(columns=unchecked_columns, inplace=True)
+except KeyError as e:
+    pass
+
 # Tải bản csv đã filter về máy
 download_file_btn = st.download_button(
     label="Download data as CSV",
-    data = df_selection.to_csv().encode('utf-8'),
+    data = df_export.to_csv().encode('utf-8'),
     file_name='data.csv',
     mime='text/csv'
 )
