@@ -8,46 +8,7 @@ import time
 # user_name       = "amy.quach.ngoc"
 # password        = "Ngoc2002"
 # keyword         = "lustige katzen"
-# '''
-# Just to give you a better overview: 
-# () is always an opinion:
 
-# Leads finder parameters: 
-# Username|Full Name| E-Mail| Phone | Biography | City | Followers
-# (I also like the hashtag parameter currently this can be kept in process)
-# (if there is any possibility to get Engagement Rate as Parameter it would be awesome)
-
-# Scraping: 
-# Follower Slider for Audience Quality Check | 
-# Language Filtering (German, English)| 
-# CSV Export (if possible also as TXT additional, if not no worries)
-
-# Scraper Cache Clearing to reset the scraped Data's for better Overview
-# Logo Branding and Favicon DONE
-
-# And maybe more pertinent login process, so it gets a smoother flow
-# a list of the csv which have been created and with and with checkbox they can choose which csv they want to combine into a file if possible would be really efficient
-
-# '''
-file_path       = "data.csv"
-
-try:
-    df = pd.read_csv(file_path)
-    
-except FileNotFoundError or pd.errors.EmptyDataError:
-    data = {
-        "Username":     [],
-        "Full name":    [],
-        "Email":        [],
-        "Phone":        [],
-        "Biography":    [],
-        "City":         [],
-        "Followers":    [],
-        "Hashtags":     [],
-        "Language":     []
-    }
-
-    df = pd.DataFrame(data)
 
 ins = InsClawer()
 
@@ -77,7 +38,7 @@ col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to be abl
 username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
-user_name = username
+user_name = username.replace(".","")
 
 col4.write("")
 col4.write("")
@@ -86,7 +47,26 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 # login
 if login_btn_clicked:
     user_name = user_name + "✅"
+ 
+file_path       = f"data_{user_name}.csv"
+
+try:
+    df = pd.read_csv(file_path)
     
+except FileNotFoundError or pd.errors.EmptyDataError:
+    data = {
+        "Username":     [],
+        "Full name":    [],
+        "Email":        [],
+        "Phone":        [],
+        "Biography":    [],
+        "City":         [],
+        "Followers":    [],
+        "Hashtags":     [],
+        "Language":     []
+    }
+
+    df = pd.DataFrame(data)   
     
 #---- SIDEBAR -----#
 st.sidebar.empty()
@@ -161,12 +141,11 @@ if hashtag_ckBox:
     selected_columns.append('Hashtags')
     
 
-# Lọc dữ liệu theo location_name và language
+# Lọc dữ liệu theo location_name và language và các checkbox
 df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
-
 df_selection = df_selection[selected_columns]
 
-
+# tổng người dùng đã lấy được dữ liệu
 total_data = len(df_selection)
 
 st.write("")
