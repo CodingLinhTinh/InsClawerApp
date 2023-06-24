@@ -52,7 +52,7 @@ class InsClawer:
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
         self.client.delay_range = [1,3]
-        self.data = self.client.hashtag_medias_recent(user_input, amount=amount)
+        self.data = self.client.hashtag_medias_top(user_input, amount=amount)
         time.sleep(5)
     
     def getFollowers(self, username):

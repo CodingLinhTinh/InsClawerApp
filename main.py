@@ -38,7 +38,7 @@ col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to be abl
 username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
-user_name = username.replace(".","")
+
 
 col4.write("")
 col4.write("")
@@ -46,8 +46,10 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 
 # login
 if login_btn_clicked:
-    user_name = user_name + "✅"
- 
+    user_name = username + "✅"
+    
+user_name = username.replace(".","")
+
 file_path       = f"data_{user_name}.csv"
 
 try:
@@ -94,20 +96,22 @@ if "All" in language:
     # If "All" is selected, set location_name to all unique options
     language = list(df["Language"].unique())
 
-
+st.sidebar.divider()
 
 # Multi checkbox displaying data
-st.sidebar.header("Please select display elements:")
-
-username_ckBox = st.sidebar.checkbox('Username')
-fullname_ckBox = st.sidebar.checkbox('Full name')
-email_ckBox = st.sidebar.checkbox('Email')
-phone_ckBox = st.sidebar.checkbox('Phone number')
-followers_ckBox = st.sidebar.checkbox('Followers')
-bio_ckBox = st.sidebar.checkbox('Biography')
-lang_ckBox = st.sidebar.checkbox('Language')
-city_ckBox = st.sidebar.checkbox('City')
-hashtag_ckBox = st.sidebar.checkbox('Hashtags')
+is_pressed = False
+# Expander
+with st.sidebar.expander("Please select display elements:"):
+    username_ckBox = st.checkbox('Username')
+    fullname_ckBox = st.checkbox('Full name')
+    email_ckBox = st.checkbox('Email')
+    phone_ckBox = st.checkbox('Phone number')
+    followers_ckBox = st.checkbox('Followers')
+    bio_ckBox = st.checkbox('Biography')
+    lang_ckBox = st.checkbox('Language')
+    city_ckBox = st.checkbox('City')
+    hashtag_ckBox = st.checkbox('Hashtags')
+    select_all = st.checkbox('All', value=True)
 
 # List of selected columns
 selected_columns = []
@@ -140,10 +144,30 @@ if city_ckBox:
 if hashtag_ckBox:
     selected_columns.append('Hashtags')
     
+if select_all:
+    if "Username" not in selected_columns:
+        selected_columns.append('Username')
+    if "Full name" not in selected_columns:
+        selected_columns.append('Full name')
+    if "Email" not in selected_columns:
+        selected_columns.append('Email')
+    if "Phone" not in selected_columns:
+        selected_columns.append('Phone')
+    if "Followers" not in selected_columns:
+        selected_columns.append('Followers')
+    if "Biography" not in selected_columns:
+        selected_columns.append('Biography')
+    if "Language" not in selected_columns:
+        selected_columns.append('Language')
+    if "City" not in selected_columns:
+        selected_columns.append('City')
+    if "Hashtags" not in selected_columns:
+        selected_columns.append('Hashtags')
 
 # Lọc dữ liệu theo location_name và language và các checkbox
 df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
 df_selection = df_selection[selected_columns]
+
 
 # tổng người dùng đã lấy được dữ liệu
 total_data = len(df_selection)
@@ -162,7 +186,7 @@ left_column.dataframe(df_selection)
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input:")
-amount = int(right_column.slider('Amount users:', 0, 100))
+amount = int(right_column.slider('Number of times performed:', 0, 10))
 start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
@@ -174,7 +198,7 @@ if start_btn_clicked and amount > 0:
 
         for percent_complete in range(amount + 1):
             time.sleep(0.1)
-            progress_value = round(percent_complete / amount, 2)
+            progress_value = round( (percent_complete) / amount, 2)
             if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
                 progress_value = 1.0
             my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
@@ -218,8 +242,6 @@ download_file_btn = st.download_button(
     file_name='data.csv',
     mime='text/csv'
 )
-
-
 
    
 
