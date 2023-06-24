@@ -32,7 +32,8 @@ class InsClawer:
             return False
     
     def clientLogin(self ,username, password):
-        try:        
+        try:  
+            self.client.delay_range = [1,3]      
             self.client.load_settings("session.json")
             self.client.login(username, password)
             self.client.get_timeline_feed()
@@ -41,22 +42,17 @@ class InsClawer:
             self.error = e
             wait_time_minutes = 60
             time.sleep(wait_time_minutes * 60)
-
-    def getUserName(self):
-        self.client.delay_range = [1,3]
-        self.username = self.client.account_info().dict()["username"]
     
     def clientLogout(self):
         self.client.logout()
         
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
-        self.client.delay_range = [1,3]
+        # self.client.delay_range = [1,3]
         self.data = self.client.hashtag_medias_top(user_input, amount=amount)
-        time.sleep(5)
     
     def getFollowers(self, username):
-        self.client.delay_range = [1,3]
+        # self.client.delay_range = [1,3]
         follower_count = self.client.user_info_by_username(username).dict()
         return follower_count["follower_count"]
     
@@ -85,7 +81,7 @@ class InsClawer:
                 else:
                     language = "Others"
             else: 
-                location_name = ""
+                location_name = "No City"
                 if self.classify_language(biography):
                     language = "German"
                 else:
@@ -104,7 +100,8 @@ class InsClawer:
                     "Hashtags":     hashtags,
                     "Language":     language
                 })
-            
+       
+         
     def createCSV(self, file_path):
         # Đọc dữ liệu từ file CSV đã tồn tại (nếu có)
         existing_data = pd.DataFrame()
@@ -121,6 +118,8 @@ class InsClawer:
 
         # Ghi dữ liệu vào file CSV
         combined_data.to_csv(file_path, index=False, encoding='utf-8')
+    
+    
     
     def remove_duplicates_csv(self, file_path, columns_to_check):
         # Đọc dữ liệu từ file CSV

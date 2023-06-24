@@ -12,7 +12,7 @@ import time
 
 ins = InsClawer()
 
-st.set_page_config(page_title="Instagram CSV", 
+st.set_page_config(page_title="AI Growth Tools", 
                     page_icon="logo.ico",
                     layout="wide")
 
@@ -28,8 +28,6 @@ right.write("")
 right.write("")
 
 right.title("AI GROWTH CO.")
-
-st.markdown("##")
 st.markdown("---")
 
 col1,col2,col3,col4 = st.columns([2,1,1,1])
@@ -46,10 +44,10 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 
 # login
 if login_btn_clicked:
-    user_name = username + "✅"
+    user_name = username 
+    time.sleep(10)
     
 user_name = username.replace(".","")
-
 file_path       = f"data_{user_name}.csv"
 
 try:
@@ -163,6 +161,8 @@ if select_all:
         selected_columns.append('City')
     if "Hashtags" not in selected_columns:
         selected_columns.append('Hashtags')
+        
+    selected_columns.pop()
 
 # Lọc dữ liệu theo location_name và language và các checkbox
 df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
@@ -186,7 +186,7 @@ left_column.dataframe(df_selection)
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input:")
-amount = int(right_column.slider('Number of times performed:', 0, 10))
+amount = int(right_column.slider('Number of times performed:', 0, 20))
 start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
@@ -201,16 +201,21 @@ if start_btn_clicked and amount > 0:
             progress_value = round( (percent_complete) / amount, 2)
             if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
                 progress_value = 1.0
+                
+            # hiển thị %
             my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
+            
             try:
                 user_input = user_input.replace(" ", "").lower()
                 ins.getMediasTopData(user_input, amount = 100)
-                # append vào Output
+                
+                # append vào Output -> list
                 ins.getUserData()
             except Exception as e:
                 if "feedback_required" in str(e):
                     st.error("Instagram requires feedback. Stopping for 5 mins then refresh the page", icon="🚨")
                     time.sleep(5*60)
+                pass
             
 
             
