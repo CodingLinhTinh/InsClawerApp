@@ -7,7 +7,6 @@ import time
 
 # user_name       = "amy.quach.ngoc"
 # password        = "Ngoc2002"
-# keyword         = "lustige katzen"
 
 
 ins = InsClawer()
@@ -55,6 +54,7 @@ try:
     
 except FileNotFoundError or pd.errors.EmptyDataError:
     data = {
+        "PK":           [],
         "Username":     [],
         "Full name":    [],
         "Email":        [],
@@ -100,6 +100,7 @@ st.sidebar.divider()
 is_pressed = False
 # Expander
 with st.sidebar.expander("Please select display elements:"):
+    pk_ckBox = st.checkbox('PK')
     username_ckBox = st.checkbox('Username')
     fullname_ckBox = st.checkbox('Full name')
     email_ckBox = st.checkbox('Email')
@@ -115,6 +116,9 @@ with st.sidebar.expander("Please select display elements:"):
 selected_columns = []
 
 # Add selected columns to the list
+if pk_ckBox:
+    selected_columns.append('PK')
+    
 if username_ckBox:
     selected_columns.append('Username')
 
@@ -143,6 +147,8 @@ if hashtag_ckBox:
     selected_columns.append('Hashtags')
     
 if select_all:
+    if "PK" not in selected_columns:
+        selected_columns.append('PK')
     if "Username" not in selected_columns:
         selected_columns.append('Username')
     if "Full name" not in selected_columns:
@@ -207,7 +213,7 @@ if start_btn_clicked and amount > 0:
             
             try:
                 user_input = user_input.replace(" ", "").lower()
-                ins.getMediasTopData(user_input, amount = 100)
+                ins.getMediasTopData(user_input, amount = 100)               
                 
                 # append vào Output -> list
                 ins.getUserData()

@@ -9,9 +9,8 @@ class InsClawer:
     def __init__(self):
         self.client = Client()
         
-        self.data = None 
+        self.data = [] 
         self.output = []
-        self.username = ""
         self.error = None
         
     def get_country_name(self, location):
@@ -48,11 +47,69 @@ class InsClawer:
         
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
-        # self.client.delay_range = [1,3]
         self.data = self.client.hashtag_medias_top(user_input, amount=amount)
+        
+    # lấy dữ liệu từ những người đã follow top 5 ngưởi có lượng follow lớn nhất từ file csv
+    def getUserFollowersData(self, user_id, follower_count):
+        # Số lượng dữ liệu cần lấy
+        num_data = int( follower_count / 100 )
+        
+        for i in range(0, num_data):
+            print(f"Bắt đầu lấy dữ liệu từ {user_id} lần {i}")
+            self.client.delay_range = [1,3]
+            ### amount là số lượng users
+            ids = self.client.user_followers(user_id=user_id, amount= 100).keys()
+
+            for id in ids:
+                data = self.client.user_info(id).dict()
+                pk              = int( data["pk"] )
+                username        = data['username']
+                full_name       = data['full_name']
+                biography       = data['biography']
+                hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
+                location        = data['location'] 
+                follower_count  = data['follower_count']
+                
+                
+                location_name   = None
+                language = ""
+                email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
+                phone           = re.findall(r'\b\d{10,11}\b', biography)
+                
+                if location is not None:
+                    location_name   = location['name']
+                    if self.get_country_name(location_name):
+                        language = "German"
+                    else:
+                        language = "Others"
+                else: 
+                    location_name = "No City"
+                    if self.classify_language(biography):
+                        language = "German"
+                    else:
+                        language = "Others"
+                
+                
+                if username not in self.output:
+                    self.output.append({
+                        "PK":           pk,
+                        "Username":     username,
+                        "Full name":    full_name,
+                        "Email":        email,
+                        "Phone":        phone,
+                        "Biography":    biography,
+                        "City":         location_name,
+                        "Followers":    follower_count,
+                        "Hashtags":     hashtags,
+                        "Language":     language
+                    })
+                
+                
+        
+    
     
     def getFollowers(self, username):
-        # self.client.delay_range = [1,3]
+        self.client.delay_range = [1,3]
         follower_count = self.client.user_info_by_username(username).dict()
         return follower_count["follower_count"]
     
@@ -73,7 +130,10 @@ class InsClawer:
             email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
             phone           = re.findall(r'\b\d{10,11}\b', biography)
             
-            
+            # lấy thông tin từ Followers của Username hiện tại
+            if pk is not None and follower_count >= 500 :
+                self.getUserFollowersData(pk, follower_count)
+                
             if location is not None:
                 location_name   = location['name']
                 if self.get_country_name(location_name):
@@ -90,6 +150,7 @@ class InsClawer:
             
             if username not in self.output:
                 self.output.append({
+                    "PK":           pk,
                     "Username":     username,
                     "Full name":    full_name,
                     "Email":        email,
@@ -131,18 +192,4 @@ class InsClawer:
         
         # Ghi dữ liệu đã loại bỏ trùng lặp vào file CSV mới
         data.to_csv(file_path, index=False)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        
-        
-        
-        
-    
-    
+      
