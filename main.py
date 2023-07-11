@@ -191,6 +191,7 @@ start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
+    
     ins.clientLogin(username, password)
     try:
         progress_text = "Operation in progress. Please wait..."
