@@ -12,14 +12,14 @@ import time
 ins = InsClawer()
 
 st.set_page_config(page_title="AI Growth Tools", 
-                    page_icon="logo.ico",
+                    page_icon="assets/logo.ico",
                     layout="wide")
 
 
 
 #---- MAIN PAGE -----#
 left, right= st.columns([1,6], gap="small")
-image = Image.open('logo.png')
+image = Image.open('assets/logo.png')
 
 left.image(image, width=100)
 
@@ -36,7 +36,6 @@ username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
 
-
 col4.write("")
 col4.write("")
 login_btn_clicked = col4.button('Login', help="Click to log in")
@@ -47,7 +46,7 @@ if login_btn_clicked:
     time.sleep(10)
     
 user_name = username.replace(".","")
-file_path       = f"data_{user_name}.csv"
+file_path       = f"data/data_{user_name}.csv"
 
 try:
     df = pd.read_csv(file_path)
@@ -192,44 +191,29 @@ left_column.dataframe(df_selection)
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input:")
-amount = int(right_column.slider('Number of times performed:', 0, 20))
+amount = int(right_column.slider('Number of users:', 0, 100))
+
 start_btn_clicked = right_column.button("Start")
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
-    
+    # Instagram user login
     ins.clientLogin(username, password)
-    try:
-        progress_text = "Operation in progress. Please wait..."
-        my_bar = st.progress(0, text=progress_text)
-
-        for percent_complete in range(amount + 1):
-            time.sleep(0.1)
-            progress_value = round( (percent_complete) / amount, 2)
-            if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
-                progress_value = 1.0
-                
-            # hiển thị %
-            my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
-            
-            try:
-                user_input = user_input.replace(" ", "").lower()
-                ins.getMediasTopData(user_input, amount = 100)               
-                
-                # append vào Output -> list
-                ins.getUserData()
-            except Exception as e:
-                if "feedback_required" in str(e):
-                    st.error("Instagram requires feedback. Stopping for 5 mins then refresh the page", icon="🚨")
-                    time.sleep(5*60)
-                pass
-            
-
-            
-        ins.createCSV(file_path=file_path)
-        ins.remove_duplicates_csv(file_path=file_path, columns_to_check= ["Username", "Full name"])
-    except ChallengeRequired:
-        pass
+    
+    # set proxy
+    ins.client.set_proxy("http://zC1vghLnwV4jgu4u:wifi;de;;;@proxy.soax.com:9000")
+    ins.client.set_locale('de_DE')
+    ins.client.set_timezone_offset(-60)
+    ins.client.get_settings()
+    
+    # set delay range 
+    ins.client.delay_range = [1,3]
+    
+    user_input = user_input.replace(" ", "").lower()
+    ins.getMediasTopData(user_input, amount = amount)
+    ins.getUserData()
+    ins.createCSV(file_path=file_path)
+    ins.remove_duplicates_csv(file_path=file_path, columns_to_check= ["Username", "Full name"])
 
 
 # Download the data
