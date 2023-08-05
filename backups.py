@@ -5,9 +5,6 @@ from PIL import Image
 from instagrapi.exceptions import ChallengeRequired
 import time
 
-# user_name       = "amy.quach.ngoc"
-# password        = "Ngoc2002"
-
 
 ins = InsClawer()
 
