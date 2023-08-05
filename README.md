@@ -26,16 +26,15 @@
 
 ## ⚙️ Guides
 ### Install
-
-<code>
-    python -r install requirements.txt
-</code>
+```python
+python -r install requirements.txt
+```
 
 ### Run
 
-<code>
-    streamlit run main.py
-</code>
+```python
+streamlit run main.py
+```
   
 ## 🥲 Future Functions
 TODO: 

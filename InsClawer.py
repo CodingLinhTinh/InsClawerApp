@@ -34,7 +34,6 @@ class InsClawer:
             self.client.load_settings("session.json")
             self.client.login(username, password)
             self.client.get_timeline_feed()
-            
             print("Logged In.")
             
         except Exception as e:
@@ -47,7 +46,6 @@ class InsClawer:
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
         self.data = self.client.hashtag_medias_top(user_input, amount=amount)
-        print(self.data)
         
     # lấy dữ liệu từ những người đã follow top 5 ngưởi có lượng follow lớn nhất từ file csv
     def getUserFollowersData(self, user_id, amount):        
