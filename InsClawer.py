@@ -9,10 +9,8 @@ import streamlit as st
 class InsClawer:
     def __init__(self):
         self.client = Client()
-        
         self.data = [] 
         self.output = []
-        self.error = None
         
     def get_country_name(self, location):
         geolocator = Nominatim(user_agent="my_app")
@@ -32,16 +30,16 @@ class InsClawer:
             return False
     
     def clientLogin(self ,username, password):
-        try:       
+        try:         
             self.client.load_settings("session.json")
             self.client.login(username, password)
             self.client.get_timeline_feed()
+            
             print("Logged In.")
             
         except Exception as e:
-            self.error = e
-            wait_time_minutes = 60
-            time.sleep(wait_time_minutes * 60)
+            print(e)
+            pass
     
     def clientLogout(self):
         self.client.logout()
@@ -52,26 +50,12 @@ class InsClawer:
         print(self.data)
         
     # lấy dữ liệu từ những người đã follow top 5 ngưởi có lượng follow lớn nhất từ file csv
-    def getUserFollowersData(self, user_id):        
+    def getUserFollowersData(self, user_id, amount):        
         ### amount là số lượng users
-        amount = 100
-        ids = list(self.client.user_followers(user_id=user_id, amount= amount).keys())
+        ids = self.client.user_followers(user_id=user_id, amount= amount).keys()
         
-        
-        progress_text = "Operation in progress. Please wait..."
-        my_bar = st.progress(0, text=progress_text)
-        
-        for percent_complete in range(amount + 1):
-            time.sleep(0.1)
-            progress_value = round( percent_complete / amount, 2)
-            if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
-                progress_value = 1.0
-                
-            # hiển thị %
-            my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
-            
-           
-            data = self.client.user_info(ids[percent_complete]).dict()
+        for id in ids:
+            data = self.client.user_info(id).dict()
             pk              = int( data["pk"] )
             username        = data['username']
             full_name       = data['full_name']
@@ -82,6 +66,7 @@ class InsClawer:
                 hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
                 location        = data['location']
             except Exception as e:
+                print(e)
                 pass
             
             follower_count  = data['follower_count']
@@ -117,6 +102,8 @@ class InsClawer:
                     "Hashtags":     hashtags,
                     "Language":     language
                 })
+                print(f"Added {username}")
+                time.sleep(3)
 
 
     # Lấy số lượng người theo dõi
@@ -164,7 +151,7 @@ class InsClawer:
             
             if username not in self.output:
                 if follower_count > 0:
-                    self.getUserFollowersData(user_id=pk)
+                    self.getUserFollowersData(user_id=pk, amount=follower_count)
                 
                 self.output.append({
                     "PK":           pk,
@@ -178,6 +165,8 @@ class InsClawer:
                     "Hashtags":     hashtags,
                     "Language":     language
                 })
+                print(f"Added {username}")
+                time.sleep(3)
                 
                 
        

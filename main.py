@@ -3,18 +3,19 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 from instagrapi.exceptions import ChallengeRequired
-import time
+import time 
 
-# user_name       = "amy.quach.ngoc"
-# password        = "Ngoc2002"
+user_file_path = "data/users.csv"
+bot_file_path = "data/bots.csv"
 
+bot_df = pd.read_csv(bot_file_path)
+bot_list = bot_df.to_dict(orient="records")
 
 ins = InsClawer()
 
 st.set_page_config(page_title="AI Growth Tools", 
                     page_icon="assets/logo.ico",
                     layout="wide")
-
 
 
 #---- MAIN PAGE -----#
@@ -31,7 +32,7 @@ st.markdown("---")
 
 col1,col2,col3,col4 = st.columns([2,1,1,1])
 
-col1.subheader("Hello, there 👋👋\nPlease Login to your IG Account to be able to run the Exactor")
+col1.subheader("Hello, there 👋👋\nPlease Login to your Account to be able to run the Exactor")
 username = col2.text_input('Username', placeholder="Enter username:")
 password = col3.text_input('Password', type="password",placeholder="Enter password:")
 
@@ -42,14 +43,24 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 
 # login
 if login_btn_clicked:
-    user_name = username 
-    time.sleep(10)
     
+    # Lấy giá trị từ users.csv
+    user_name = username 
+    pass_word = password
+
+    user_df = pd.read_csv(user_file_path)
+        
+    if user_df["Username"].item() != user_name or str(user_df["Password"].item()) != pass_word:
+        col4.error("Username or Password is incorrect! Refresh and try again.")
+    
+    time.sleep(10)
+
+# Saving clawing data
 user_name = username.replace(".","")
-file_path       = f"data/data_{user_name}.csv"
+data_file_path       = f"data/data_{user_name}.csv"
 
 try:
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(data_file_path)
     
 except FileNotFoundError or pd.errors.EmptyDataError:
     data = {
@@ -181,7 +192,7 @@ st.write("")
 st.write("")
 left_col, right_col = st.columns(2)
 left_col.subheader(f"Total: {total_data} 👤")
-right_col.subheader(f"Logged as: {user_name}")
+right_col.subheader(f"Welcome {user_name} 🌸")
 st.markdown("---")
 
 left_column, right_column = st.columns([2,1])
@@ -190,16 +201,16 @@ left_column.dataframe(df_selection)
 
 # Exact data
 right_column.subheader("Data Exactor")
-user_input = right_column.text_input("Keywords Input:")
-amount = int(right_column.slider('Number of users:', 0, 100))
+user_input = right_column.text_input("Keywords Input 🔍:")
+amount = int(right_column.slider('Number of data retrievals ⏳:', 0, 10))
 
 start_btn_clicked = right_column.button("Start")
 
+
+
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
-    # Instagram user login
-    ins.clientLogin(username, password)
-    
+    print(start_btn_clicked)
     # set proxy
     ins.client.set_proxy("http://zC1vghLnwV4jgu4u:wifi;de;;;@proxy.soax.com:9000")
     ins.client.set_locale('de_DE')
@@ -209,12 +220,34 @@ if start_btn_clicked and amount > 0:
     # set delay range 
     ins.client.delay_range = [1,3]
     
-    user_input = user_input.replace(" ", "").lower()
-    ins.getMediasTopData(user_input, amount = amount)
-    ins.getUserData()
-    ins.createCSV(file_path=file_path)
-    ins.remove_duplicates_csv(file_path=file_path, columns_to_check= ["Username", "Full name"])
-
+    for i in range(0, len(bot_list)):
+        print(bot_list[i])
+        try:
+            # Instagram user login
+            ins.client.delay_range = [1,3]
+            ins.clientLogin(bot_list[i]["Username"], bot_list[i]["Password"])
+            time.sleep(3)
+            
+            user_input = user_input.replace(" ", "").lower()
+            
+            ins.client.delay_range = [1,3]
+            ins.getMediasTopData(user_input, amount = amount)
+            time.sleep(3)
+            
+            ins.client.delay_range = [1,3]
+            ins.getUserData()
+            time.sleep(3)
+            
+            ins.createCSV(file_path=data_file_path)
+            
+            ins.remove_duplicates_csv(file_path=data_file_path, columns_to_check= ["Username", "Full name"])
+            
+            time.sleep(2*60)
+            
+        except Exception as e:
+            print(e)
+            pass
+        
 
 # Download the data
 st.write("")
