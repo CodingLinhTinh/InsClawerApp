@@ -64,7 +64,6 @@ class InsClawer:
                 hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
                 location        = data['location']
             except Exception as e:
-                print(e)
                 pass
             
             follower_count  = data['follower_count']
