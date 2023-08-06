@@ -148,7 +148,7 @@ class InsClawer:
             
             if username not in self.output:
                 if follower_count > 0:
-                    self.getUserFollowersData(user_id=pk, amount=follower_count)
+                    self.getUserFollowersData(user_id=pk, amount=50)
                 
                 self.output.append({
                     "PK":           pk,
