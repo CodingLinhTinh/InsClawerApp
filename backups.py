@@ -192,6 +192,48 @@ amount = int(right_column.slider('Number of users:', 0, 100))
 
 start_btn_clicked = right_column.button("Start")
 
+# khi bấm nút start sẽ bắt đầu lấy dữ liệu
+if start_btn_clicked and amount > 0:
+    # set proxy
+    ins.client.set_proxy("http://zC1vghLnwV4jgu4u:wifi;de;;;@proxy.soax.com:9000")
+    ins.client.set_locale('de_DE')
+    ins.client.set_timezone_offset(-60)
+    ins.client.get_settings()
+    
+    # set delay range 
+    ins.client.delay_range = [1,3]
+    
+    try:
+        progress_text = "Operation in progress. Please wait..."
+        my_bar = st.progress(0, text=progress_text)
+
+        for percent_complete in range(amount + 1):
+            time.sleep(0.1)
+            progress_value = round( (percent_complete) / amount, 2)
+            if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
+                progress_value = 1.0
+                
+            # hiển thị %
+            my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
+            
+            try:
+                user_input = user_input.replace(" ", "").lower()
+                ins.getMediasTopData(user_input, amount = 100)
+                
+                # append vào Output -> list
+                ins.getUserData()
+            except Exception as e:
+                if "feedback_required" in str(e):
+                    st.error("Instagram requires feedback. Stopping for 5 mins then refresh the page", icon="🚨")
+                    time.sleep(5*60)
+                pass
+            
+
+            
+        ins.createCSV(file_path=file_path)
+        ins.remove_duplicates_csv(file_path=file_path, columns_to_check= ["Username", "Full name"])
+    except ChallengeRequired:
+        pass
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:

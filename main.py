@@ -6,10 +6,6 @@ from instagrapi.exceptions import ChallengeRequired
 import time 
 
 user_file_path = "data/users.csv"
-bot_file_path = "data/bots.csv"
-
-bot_df = pd.read_csv(bot_file_path)
-bot_list = bot_df.to_dict(orient="records")
 
 ins = InsClawer()
 
@@ -45,24 +41,23 @@ login_btn_clicked = col4.button('Login', help="Click to log in")
 if login_btn_clicked:
     
     # Lấy giá trị từ users.csv
-    user_name = username 
-    pass_word = password
-
     user_df = pd.read_csv(user_file_path)
         
-    if user_df["Username"].item() != user_name or str(user_df["Password"].item()) != pass_word:
+    if user_df["Username"].item() != username or str(user_df["Password"].item()) != password:
         col4.error("Username or Password is incorrect! Refresh and try again.")
+    else:
+        col4.success(f"{username.replace('_','')} Logged In.")
     
-    time.sleep(10)
+    time.sleep(5)
 
 # Saving clawing data
-user_name = username.replace(".","")
+user_name = username.replace("_","")
 data_file_path       = f"data/data_{user_name}.csv"
 
 try:
     df = pd.read_csv(data_file_path)
     
-except FileNotFoundError or pd.errors.EmptyDataError:
+except FileNotFoundError or pd.errors.EmptyDataError :
     data = {
         "PK":           [],
         "Username":     [],
@@ -76,7 +71,7 @@ except FileNotFoundError or pd.errors.EmptyDataError:
         "Language":     []
     }
 
-    df = pd.DataFrame(data)   
+    df = pd.DataFrame(data)
     
 #---- SIDEBAR -----#
 st.sidebar.empty()
@@ -198,7 +193,12 @@ st.markdown("---")
 left_column, right_column = st.columns([2,1])
 left_column.dataframe(df_selection)
 
+# Bot Login
+right_column.subheader("Instagram Login")
+bot_name = right_column.text_input("IG username:",placeholder="Enter IG username:")
+bot_pass = right_column.text_input('Password:', type="password",placeholder="Enter password:")
 
+right_column.write("")
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input 🔍:")
@@ -206,11 +206,8 @@ amount = int(right_column.slider('Number of data retrievals ⏳:', 0, 10))
 
 start_btn_clicked = right_column.button("Start")
 
-
-
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
-    print(start_btn_clicked)
     # set proxy
     ins.client.set_proxy("http://zC1vghLnwV4jgu4u:wifi;de;;;@proxy.soax.com:9000")
     ins.client.set_locale('de_DE')
@@ -220,38 +217,49 @@ if start_btn_clicked and amount > 0:
     # set delay range 
     ins.client.delay_range = [1,3]
     
-    for i in range(0, len(bot_list)):
-        print(bot_list[i])
-        try:
-            # Instagram user login
-            ins.client.delay_range = [1,3]
-            ins.clientLogin(bot_list[i]["Username"], bot_list[i]["Password"])
-            time.sleep(3)
+    try:
+        progress_text = "Operation in progress. Please wait..."
+        my_bar = left_column.progress(0, text=progress_text)
+
+        for percent_complete in range(amount + 1):
+            time.sleep(0.1)
+            progress_value = round( (percent_complete) / amount, 2)
+            if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
+                progress_value = 1.0
+                
+            # hiển thị %
+            my_bar.progress( progress_value  , text=f"{progress_text} ({progress_value*100}%)")
             
-            user_input = user_input.replace(" ", "").lower()
+            try:
+                # Instagram user login
+                ins.clientLogin(bot_name, bot_pass)
+                time.sleep(3)
+                
+                user_input = user_input.replace(" ", "").lower()
+                ins.getMediasTopData(user_input, amount = amount)
+                time.sleep(3)
+                
+                ins.getUserData()
+                time.sleep(3)
+                time.sleep(2*60)
+                ins.createCSV(file_path=data_file_path)
             
-            ins.client.delay_range = [1,3]
-            ins.getMediasTopData(user_input, amount = amount)
-            time.sleep(3)
+                ins.remove_duplicates_csv(file_path=data_file_path, columns_to_check= ["Username", "Full name"])
+            except Exception as e:
+                if "feedback_required" in str(e):
+                    st.error("Instagram requires feedback. Stopping for 5 mins then refresh the page", icon="🚨")
+                    time.sleep(5*60)
+                pass
             
-            ins.client.delay_range = [1,3]
-            ins.getUserData()
-            time.sleep(3)
-            
-            ins.createCSV(file_path=data_file_path)
-            
-            ins.remove_duplicates_csv(file_path=data_file_path, columns_to_check= ["Username", "Full name"])
-            
-            time.sleep(2*60)
-            
-        except Exception as e:
-            print(e)
-            pass
+
+    except ChallengeRequired:
+        st.error("Instagram has ChallengeRequired. Stopping for 5 mins then refresh the page", icon="🚨")
+        pass
         
 
 # Download the data
-st.write("")
-st.text("Download the filtered data 👇")
+left_column.write("")
+left_column.text("Download the filtered data 👇")
 
 # Filter DataFrame based on selected columns
 df_export = df_selection
@@ -265,7 +273,7 @@ except KeyError as e:
     pass
 
 # Tải bản csv đã filter về máy
-download_file_btn = st.download_button(
+download_file_btn = left_column.download_button(
     label="Download data as CSV",
     data = df_export.to_csv().encode('utf-8'),
     file_name='data.csv',

@@ -54,7 +54,11 @@ class InsClawer:
         
         for id in ids:
             data = self.client.user_info(id).dict()
-            pk              = int( data["pk"] )
+            try:
+                pk          = int( data["pk"] )
+            except TypeError:
+                print("Value cannot be converted to an integer.")
+                pass
             username        = data['username']
             full_name       = data['full_name']
             biography       = data['biography']
@@ -112,7 +116,11 @@ class InsClawer:
     def getUserData(self):
         for d in self.data:
             data            = d.dict()
-            pk              = int( data["user"]["pk"] )
+            try:
+                pk          = int( data["user"]["pk"] )
+            except TypeError:
+                print("Value cannot be converted to an integer.")
+                pass
             username        = data['user']['username']
             full_name       = data['user']['full_name']
             biography       = data['caption_text']
