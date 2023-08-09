@@ -49,6 +49,9 @@ if login_btn_clicked:
         col4.success(f"{username.replace('_','')} Logged In.")
     
     time.sleep(5)
+    # Saving clawing data
+    user_name = username.replace("_","")
+    data_file_path       = f"data/data_{user_name}.csv"
 
 # Saving clawing data
 user_name = username.replace("_","")
