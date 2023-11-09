@@ -4,13 +4,14 @@ from langdetect import detect
 from geopy.geocoders import Nominatim
 import time 
 import re
-import streamlit as st
 
 class InsClawer:
     def __init__(self):
         self.client = Client()
         self.data = [] 
         self.output = []
+        
+
         
     def get_country_name(self, location):
         geolocator = Nominatim(user_agent="my_app")
@@ -34,6 +35,7 @@ class InsClawer:
             self.client.load_settings("session.json")
             self.client.login(username, password)
             self.client.get_timeline_feed()
+            
             print("Logged In.")
             
         except Exception as e:
@@ -45,75 +47,143 @@ class InsClawer:
         
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
+        print("getMediasTopData")
         self.data = self.client.hashtag_medias_top(user_input, amount=amount)
         
+        
     # lấy dữ liệu từ những người đã follow top 5 ngưởi có lượng follow lớn nhất từ file csv
-    def getUserFollowersData(self, user_id, amount):        
+    def getUserFollowersData(self, user_id, amount):  
+        print("getUserFollowersData")      
         ### amount là số lượng users
-        ids = self.client.user_followers(user_id=user_id, amount= amount).keys()
+        ids                 = self.client.user_followers(user_id=user_id, amount= amount).keys()
+        username            = None
+        full_name           = None 
+        biography           = None 
+        location            = None
+        follower_count      = None 
+        is_privated         = None
+        is_verified         = None
+        media_count         = None
+        following_count     = None
+        is_businessed       = None
+        
+        private             = None
+        verified            = None 
+        business            = None
+        location_name   = None
+        language = ""
+        
+        email = None
+        phone =  None
         
         for id in ids:
-            data = self.client.user_info(id).dict()
             try:
-                pk          = int( data["pk"] )
-            except TypeError:
-                print("Value cannot be converted to an integer.")
-                pass
-            username        = data['username']
-            full_name       = data['full_name']
-            biography       = data['biography']
-            location        = None
-            hashtags        = None
-            try:
-                hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
-                location        = data['location']
+                data = self.client.user_info(id).dict() 
+                try:
+                    pk          = int( data["pk"] )
+                except TypeError:
+                    print("Value cannot be converted to an integer.")
+                    pass
+                username        = data['username']
+                full_name       = data['full_name']
+                biography       = data['biography']
+                
+                try:
+                    location        = data['location']
+                except Exception as e:
+                    pass
+                
+                ## Lấy thông tin Is Private?", "Is Verified?": None, "Media Count", "Following Count"
+                more_data           = self.client.user_info_by_username(username).dict()
+                
+                follower_count      = more_data['follower_count']
+                is_privated         = more_data["is_private"]
+                is_verified         = more_data["is_verified"]
+                media_count         = more_data["media_count"]
+                following_count     = more_data["following_count"]
+                is_businessed       = more_data["is_business"]
+                
+
+                email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
+                phone           = re.findall(r'\b\d{10,11}\b', biography)
+                
+                if location is not None:
+                    location_name   = location['name']
+                    if self.get_country_name(location_name):
+                        language = "German"
+                    else:
+                        language = "Others"
+                else: 
+                    location_name = "No City"
+                    if self.classify_language(biography):
+                        language = "German"
+                    else:
+                        language = "Others"
+                        
+                if is_privated == False:
+                    private = "Yes"
+                else: 
+                    private = "No"
+                    
+                if is_verified == True:
+                    verified = "Yes"
+                else: 
+                    verified = "No"
+                    
+                if is_businessed == True:
+                    business = "Yes"
+                else: 
+                    business = "No"
+                
+                
+                if username not in self.output:
+                    self.output.append({
+                        "PK"                : pk,
+                        "Username"          : username,
+                        "Full name"         : full_name,
+                        "Email"             : email,
+                        "Phone"             : phone,
+                        "Followers"         : follower_count,
+                        "Following Count"   : following_count,
+                        "City"              : location_name,
+                        "Language"          : language,
+                        "Is Private?"       : private,
+                        "Is Verified?"      : verified,
+                        "Is Bussiness?"     : business,
+                        "Media Count"       : media_count,
+                    })
+                    print(f"Added {username}")
+                    time.sleep(3)
             except Exception as e:
+                print(e)
+                
                 pass
-            
-            follower_count  = data['follower_count']
-            location_name   = None
-            language = ""
-            email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
-            phone           = re.findall(r'\b\d{10,11}\b', biography)
-            
-            if location is not None:
-                location_name   = location['name']
-                if self.get_country_name(location_name):
-                    language = "German"
-                else:
-                    language = "Others"
-            else: 
-                location_name = "No City"
-                if self.classify_language(biography):
-                    language = "German"
-                else:
-                    language = "Others"
-            
-            
-            if username not in self.output:
-                self.output.append({
-                    "PK":           pk,
-                    "Username":     username,
-                    "Full name":    full_name,
-                    "Email":        email,
-                    "Phone":        phone,
-                    "Biography":    biography,
-                    "City":         location_name,
-                    "Followers":    follower_count,
-                    "Hashtags":     hashtags,
-                    "Language":     language
-                })
-                print(f"Added {username}")
-                time.sleep(3)
 
-
-    # Lấy số lượng người theo dõi
-    def getFollowers(self, username):
-        follower_count = self.client.user_info_by_username(username).dict()
-        return follower_count["follower_count"]
     
     
     def getUserData(self):
+        print("getUserData")
+        
+        username            = None
+        full_name           = None 
+        biography           = None 
+        location            = None
+        follower_count      = None 
+        is_privated         = None
+        is_verified         = None
+        media_count         = None
+        following_count     = None
+        is_businessed       = None
+        
+        private             = None
+        verified            = None 
+        business            = None
+        location_name       = None
+        language            = ""
+        
+        email               = None
+        phone               =  None
+        
         for d in self.data:
             data            = d.dict()
             try:
@@ -124,19 +194,23 @@ class InsClawer:
             username        = data['user']['username']
             full_name       = data['user']['full_name']
             biography       = data['caption_text']
-            location        = None
-            hashtags        = None
+            
             try:
-                hashtags        = [tag for tag in biography.split() if tag.startswith('#')]
                 location        = data['location']
             except Exception as e:
                 pass
             
-            follower_count  = self.getFollowers(username)
             
             
-            location_name   = None
-            language = ""
+            ## Lấy thông tin Is Private?", "Is Verified?": None, "Media Count", "Following Count"
+            more_data           = self.client.user_info_by_username(username).dict()
+            is_privated         = more_data["is_private"]
+            is_verified         = more_data["is_verified"]
+            media_count         = more_data["media_count"]
+            following_count     = more_data["following_count"]
+            follower_count      = more_data["follower_count"]
+            is_businessed       = more_data["is_business"]
+            
             email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
             phone           = re.findall(r'\b\d{10,11}\b', biography)
                 
@@ -153,29 +227,46 @@ class InsClawer:
                 else:
                     language = "Others"
             
-            
+            if is_privated == False:
+                private = "Yes"
+            else: 
+                private = "No"
+                
+            if is_verified == True:
+                verified = "Yes"
+            else: 
+                verified = "No"
+                
+            if is_businessed == True:
+                business = "Yes"
+            else: 
+                business = "No"
+                
             if username not in self.output:
                 if follower_count > 0:
-                    self.getUserFollowersData(user_id=pk, amount=50)
+                    # Lấy thông tin followers
+                    self.getUserFollowersData(user_id=pk, amount=50)                    
+                    
                 
                 self.output.append({
-                    "PK":           pk,
-                    "Username":     username,
-                    "Full name":    full_name,
-                    "Email":        email,
-                    "Phone":        phone,
-                    "Biography":    biography,
-                    "City":         location_name,
-                    "Followers":    follower_count,
-                    "Hashtags":     hashtags,
-                    "Language":     language
+                    "PK":                   pk,
+                    "Username":             username,
+                    "Full name":            full_name,
+                    "Email":                email,
+                    "Phone":                phone,
+                    "Followers":            follower_count,
+                    "Following Count":      following_count,
+                    "City":                 location_name,
+                    "Language":             language,
+                    "Is Private?":          private,
+                    "Is Verified?":         verified,
+                    "Is Bussiness?":        business,
+                    "Media Count":          media_count,
                 })
                 print(f"Added {username}")
                 time.sleep(3)
                 
-                
-       
-         
+    
     def createCSV(self, file_path):
         # Đọc dữ liệu từ file CSV đã tồn tại (nếu có)
         existing_data = pd.DataFrame()
@@ -192,7 +283,6 @@ class InsClawer:
 
         # Ghi dữ liệu vào file CSV
         combined_data.to_csv(file_path, index=False, encoding='utf-8')
-    
     
     
     def remove_duplicates_csv(self, file_path, columns_to_check):
