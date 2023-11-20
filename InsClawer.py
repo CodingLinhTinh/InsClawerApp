@@ -1,4 +1,5 @@
 from instagrapi import Client
+from instagrapi.mixins.challenge import ChallengeChoice
 import pandas as pd
 from langdetect import detect
 from geopy.geocoders import Nominatim
@@ -14,7 +15,7 @@ class InsClawer:
 
         
     def get_country_name(self, location):
-        geolocator = Nominatim(user_agent="my_app")
+        geolocator = Nominatim(user_agent="my_app",timeout=5)
         location_data = geolocator.geocode(location, exactly_one=True)
         if location_data:
             is_germany = location_data.raw['display_name'].split(",")[-1].strip()
@@ -48,7 +49,11 @@ class InsClawer:
     # lấy dữ liệu từ amount người dùng đầu tiên
     def getMediasTopData(self, user_input, amount):
         print("getMediasTopData")
-        self.data = self.client.hashtag_medias_top(user_input, amount=amount)
+        try:
+            self.data = self.client.hashtag_medias_top(user_input, amount=amount)
+        except Exception as e:
+            print(e)
+            pass
         
         
     # lấy dữ liệu từ những người đã follow top 5 ngưởi có lượng follow lớn nhất từ file csv
@@ -61,15 +66,7 @@ class InsClawer:
         biography           = None 
         location            = None
         follower_count      = None 
-        is_privated         = None
-        is_verified         = None
-        media_count         = None
         following_count     = None
-        is_businessed       = None
-        
-        private             = None
-        verified            = None 
-        business            = None
         location_name   = None
         language = ""
         
@@ -97,11 +94,8 @@ class InsClawer:
                 more_data           = self.client.user_info_by_username(username).dict()
                 
                 follower_count      = more_data['follower_count']
-                is_privated         = more_data["is_private"]
-                is_verified         = more_data["is_verified"]
-                media_count         = more_data["media_count"]
                 following_count     = more_data["following_count"]
-                is_businessed       = more_data["is_business"]
+                
                 
 
                 email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
@@ -120,21 +114,6 @@ class InsClawer:
                     else:
                         language = "Others"
                         
-                if is_privated == False:
-                    private = "Yes"
-                else: 
-                    private = "No"
-                    
-                if is_verified == True:
-                    verified = "Yes"
-                else: 
-                    verified = "No"
-                    
-                if is_businessed == True:
-                    business = "Yes"
-                else: 
-                    business = "No"
-                
                 
                 if username not in self.output:
                     self.output.append({
@@ -146,11 +125,7 @@ class InsClawer:
                         "Followers"         : follower_count,
                         "Following Count"   : following_count,
                         "City"              : location_name,
-                        "Language"          : language,
-                        "Is Private?"       : private,
-                        "Is Verified?"      : verified,
-                        "Is Bussiness?"     : business,
-                        "Media Count"       : media_count,
+                        "Language"          : language
                     })
                     print(f"Added {username}")
                     time.sleep(3)
@@ -169,15 +144,8 @@ class InsClawer:
         biography           = None 
         location            = None
         follower_count      = None 
-        is_privated         = None
-        is_verified         = None
-        media_count         = None
         following_count     = None
-        is_businessed       = None
         
-        private             = None
-        verified            = None 
-        business            = None
         location_name       = None
         language            = ""
         
@@ -204,12 +172,8 @@ class InsClawer:
             
             ## Lấy thông tin Is Private?", "Is Verified?": None, "Media Count", "Following Count"
             more_data           = self.client.user_info_by_username(username).dict()
-            is_privated         = more_data["is_private"]
-            is_verified         = more_data["is_verified"]
-            media_count         = more_data["media_count"]
             following_count     = more_data["following_count"]
             follower_count      = more_data["follower_count"]
-            is_businessed       = more_data["is_business"]
             
             email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
             phone           = re.findall(r'\b\d{10,11}\b', biography)
@@ -227,20 +191,6 @@ class InsClawer:
                 else:
                     language = "Others"
             
-            if is_privated == False:
-                private = "Yes"
-            else: 
-                private = "No"
-                
-            if is_verified == True:
-                verified = "Yes"
-            else: 
-                verified = "No"
-                
-            if is_businessed == True:
-                business = "Yes"
-            else: 
-                business = "No"
                 
             if username not in self.output:
                 if follower_count > 0:
@@ -258,10 +208,6 @@ class InsClawer:
                     "Following Count":      following_count,
                     "City":                 location_name,
                     "Language":             language,
-                    "Is Private?":          private,
-                    "Is Verified?":         verified,
-                    "Is Bussiness?":        business,
-                    "Media Count":          media_count,
                 })
                 print(f"Added {username}")
                 time.sleep(3)
@@ -295,4 +241,13 @@ class InsClawer:
         
         # Ghi dữ liệu đã loại bỏ trùng lặp vào file CSV mới
         data.to_csv(file_path, index=False)
+        
+    def savingOnlyEmailorPhone(self, file_path):
+        # Đọc dữ liệu từ tệp CSV gốc
+        df = pd.read_csv(file_path)
+        filtered_data = df.query('Email != "[]" or Phone != "[]"')
+        filtered_data.to_csv(file_path, index=False)
+        
+    
+    
       
