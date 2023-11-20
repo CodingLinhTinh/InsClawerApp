@@ -10,7 +10,6 @@ import re
 import os
 
 user_file_path = "data/users.csv"
-bot_file_path = "data/bots.csv"
 
 ins = InsClawer()
 automation =  Automation()
@@ -63,16 +62,26 @@ if login_btn_clicked:
 # Saving clawing data
 user_name = username.replace("_","")
 data_file_path       = f"data/data_{user_name}.csv"
+backup_file_path = f"data/data_{user_name}_backups.csv"
 
 try:
     df = pd.read_csv(data_file_path)
     
 except FileNotFoundError or pd.errors.EmptyDataError :
     data = {
+        "PK":               [],
         "Username":         [],
         "Full name":        [],
         "Email":            [],
         "Phone":            [],
+        "Followers":        [],
+        "Following Count":  [],
+        "City":             [],
+        "Language":         [],
+        "Is Private?":      [],
+        "Is Verified?":     [],
+        "Is Bussiness?":    [],
+        "Media Count":      [],
     }
 
     df = pd.DataFrame(data)
@@ -81,22 +90,52 @@ except FileNotFoundError or pd.errors.EmptyDataError :
 st.sidebar.empty()
 st.sidebar.header("Please filter here:")
 
+location_name = st.sidebar.multiselect(
+    "Select City Name:",
+    options= sorted([str(x) for x in df["City"].unique()] + ["All"]),
+    default=["All"],
+    key="location_multiselect",
+)
+
+language = st.sidebar.multiselect(
+    "Select Language Audience:",
+    options= sorted([str(x) for x in df["Language"].unique()] + ["All"]),
+    default=["All"],
+    key="language_multiselect",
+)
+
+if "All" in location_name:
+    # If "All" is selected, set location_name to all unique options
+    location_name = list(df["City"].unique())
+
+if "All" in language:
+    # If "All" is selected, set location_name to all unique options
+    language = list(df["Language"].unique())
+
 st.sidebar.divider()
 
 # Multi checkbox displaying data
 is_pressed = False
 # Expander
 with st.sidebar.expander("Please select display elements:"):
+    pk_ckBox                = st.checkbox('PK')
     username_ckBox          = st.checkbox('Username')
     fullname_ckBox          = st.checkbox('Full name')
     email_ckBox             = st.checkbox('Email')
     phone_ckBox             = st.checkbox('Phone number')
+    followers_ckBox         = st.checkbox('Followers')
+    lang_ckBox              = st.checkbox('Language')
+    city_ckBox              = st.checkbox('City')
+    media_count_ckBox       = st.checkbox('Media Count')
+    following_count_ckBox   = st.checkbox('Following Count')
     select_all              = st.checkbox('All', value=True)
 
 # List of selected columns
 selected_columns = []
 
 # Add selected columns to the list
+if pk_ckBox:
+    selected_columns.append('PK')
     
 if username_ckBox:
     selected_columns.append('Username')
@@ -110,9 +149,26 @@ if email_ckBox:
 if phone_ckBox:
     selected_columns.append('Phone')
 
+if followers_ckBox:
+    selected_columns.append('Followers')
+
+if lang_ckBox:
+    selected_columns.append('Language')
+
+if city_ckBox:
+    selected_columns.append('City')
+ 
+
+if media_count_ckBox:
+    selected_columns.append('Media Count') 
+
+if following_count_ckBox:
+    selected_columns.append('Following Count') 
 
 
 if select_all:
+    if "PK" not in selected_columns:
+        selected_columns.append('PK')
     if "Username" not in selected_columns:
         selected_columns.append('Username')
     if "Full name" not in selected_columns:
@@ -121,15 +177,27 @@ if select_all:
         selected_columns.append('Email')
     if "Phone" not in selected_columns:
         selected_columns.append('Phone')
+    if "Followers" not in selected_columns:
+        selected_columns.append('Followers')
+    if "Language" not in selected_columns:
+        selected_columns.append('Language')
+    if "City" not in selected_columns:
+        selected_columns.append('City') 
+    if "Media Count" not in selected_columns:
+        selected_columns.append('Media Count')  
+    if "Following Count" not in selected_columns:
+        selected_columns.append('Following Count') 
 
     selected_columns.pop()
 
+# Lọc dữ liệu theo location_name và language và các checkbox
+df_selection = df[(df["City"].isin(location_name)) & (df["Language"].isin(language))]
 
 
 #---------#
 
 # tổng người dùng đã lấy được dữ liệu
-total_data = len(df)
+total_data = len(df_selection)
 
 st.write("")
 st.write("")
@@ -140,10 +208,11 @@ st.markdown("---")
 
 left_column, right_column = st.columns([2,1])
 left_column.write("## All User's Data")
-left_column.dataframe(df, use_container_width=True)
+left_column.dataframe(df_selection)
+
 
 ###-----------IG LOGIN-------------------
-## Bot Login
+# Bot Login
 right_column.subheader("Instagram Login")
 bot_name = right_column.text_input("IG username:",placeholder="Enter IG username:")
 bot_pass = right_column.text_input('Password:', type="password",placeholder="Enter password:")
@@ -155,30 +224,27 @@ right_column.markdown("---")
 # Exact data
 right_column.subheader("Data Exactor")
 user_input = right_column.text_input("Keywords Input 🔍:")
-amount = int(right_column.slider('Number of data retrievals ⏳:', 0, 10))
+amount = int(right_column.slider('Number of data retrievals ⏳:', 0, 5))
 
 start_btn_clicked = right_column.button("Start", use_container_width=True)
-# ## Đọc file BOT CSV
-# bot_data_path = "./data/bots.csv"
-# # Đọc tệp CSV thành DataFrame
-# bot_df = pd.read_csv(bot_data_path)
-# # Chuyển đổi DataFrame thành một từ điển
-# user_data_dict = bot_df.to_dict(orient='records')
 
 # khi bấm nút start sẽ bắt đầu lấy dữ liệu
 if start_btn_clicked and amount > 0:
+    # set proxy
+    # ins.client.set_proxy("")
+    # ins.client.set_locale('de_DE')
+    # ins.client.set_timezone_offset(-60)
+    # ins.client.get_settings()
     
     # set delay range 
     ins.client.delay_range = [1,3]
     
+    
     progress_text = "Operation in progress. Please wait..."
     my_bar = left_column.progress(0, text=progress_text)
-    df = pd.read_csv(bot_file_path, usecols=['Username', 'Password'])
 
-    # Chuyển đổi DataFrame thành list of dictionaries
-    bot_data_list = df.to_dict(orient='records')
-    
-    for percent_complete in range( amount + 1):
+ 
+    for percent_complete in range(amount + 1):
         time.sleep(0.1)
         progress_value = round( (percent_complete) / amount, 2)
         if percent_complete == amount:  # Kiểm tra vòng lặp cuối cùng
@@ -190,49 +256,41 @@ if start_btn_clicked and amount > 0:
         user_input = user_input.replace(" ", "").lower()
         
         # Instagram user login
-            
         try:
-            # set proxy
-            # ins.client.set_proxy("http://ipd3uhe9qywtjmzf:3k64i89mv7orubfh@vienna1.thesocialproxy.com:10000")
-            # ins.client.set_locale('de_DE')
-            # ins.client.set_timezone_offset(-60)
-            # ins.client.get_settings()
-            
             ins.clientLogin(bot_name, bot_pass)
             time.sleep(3)
         except Exception as e:
             print(e)
-                
+            
         ins.getMediasTopData(user_input, amount = amount)
         time.sleep(3)
         ins.getUserData()
         time.sleep(3)
             
         if len( ins.output ) > 0:
-            ins.createCSV(file_path=data_file_path)
-            ins.remove_duplicates_csv(file_path=data_file_path, columns_to_check= ["Username", "Full name"])
+            ins.createCSV(file_path=backup_file_path)
+            ins.remove_duplicates_csv(file_path=backup_file_path, columns_to_check= ["Username", "Full name"])
+            ins.savingOnlyEmailorPhone(backup_file_path=backup_file_path,file_path=data_file_path)
+    
+
 
 ###------------------------------
 left_column.markdown("---")
-###-----------FILTERS-------------------
+###-----------Download-------------------
 left_column.write(f"## Download")
 
 ## Filter Data
 l1,l2= left_column.columns(2)
 
-
+# Download the data
+l1.write("")
+l1.text("Download CSV 👍")
 ## Dữ liệu hiển thị đã được chọn trong selection box
 df_selection = df[selected_columns]
 
 # Lọc và hiển thị dữ liệu dựa trên điều kiện và checknbox
 filtered_data = df_selection
-    
-###-------------------------------------
-
-###-----------DOWNLOAD BTN-------------------
-# Download the data
-l1.write("")
-l1.text("Download CSV 👍")
+# Filter DataFrame based on selected columns
 df_export = filtered_data
 
 # Remove columns not selected (unchecked)
@@ -242,10 +300,9 @@ try:
 except KeyError as e:
     pass
 
-
 # Tải bản csv đã filter về máy
 download_csv_btn = l1.download_button(
-    label="Download CSV",
+    label="Download CSV 👍",
     data = df_export.to_csv().encode('utf-8'),
     file_name='data.csv',
     mime='text/csv',
@@ -263,13 +320,14 @@ txt_buffer.write(text_data.encode())
 # Hiển thị nút tải dữ liệu văn bản
 l2.write("")
 l2.text("Download TXT 👇")
-l2.download_button(label="Download Text", 
-                   data=txt_buffer, 
-                   key="txt_download", 
-                   file_name="data.txt", 
-                   mime="text/plain",
-                   use_container_width=True
-                )
+l2.download_button(
+        label="Download as Text", 
+        data=txt_buffer, 
+        key="txt_download", 
+        file_name="data.txt", 
+        mime="text/plain",
+        use_container_width=True
+    )
 
 # ###------------------------------
 # st.markdown("---")

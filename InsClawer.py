@@ -66,7 +66,15 @@ class InsClawer:
         biography           = None 
         location            = None
         follower_count      = None 
+        is_privated         = None
+        is_verified         = None
+        media_count         = None
         following_count     = None
+        is_businessed       = None
+        
+        private             = None
+        verified            = None 
+        business            = None
         location_name   = None
         language = ""
         
@@ -94,8 +102,11 @@ class InsClawer:
                 more_data           = self.client.user_info_by_username(username).dict()
                 
                 follower_count      = more_data['follower_count']
+                is_privated         = more_data["is_private"]
+                is_verified         = more_data["is_verified"]
+                media_count         = more_data["media_count"]
                 following_count     = more_data["following_count"]
-                
+                is_businessed       = more_data["is_business"]
                 
 
                 email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
@@ -114,6 +125,21 @@ class InsClawer:
                     else:
                         language = "Others"
                         
+                if is_privated == False:
+                    private = "Yes"
+                else: 
+                    private = "No"
+                    
+                if is_verified == True:
+                    verified = "Yes"
+                else: 
+                    verified = "No"
+                    
+                if is_businessed == True:
+                    business = "Yes"
+                else: 
+                    business = "No"
+                
                 
                 if username not in self.output:
                     self.output.append({
@@ -125,7 +151,11 @@ class InsClawer:
                         "Followers"         : follower_count,
                         "Following Count"   : following_count,
                         "City"              : location_name,
-                        "Language"          : language
+                        "Language"          : language,
+                        "Is Private?"       : private,
+                        "Is Verified?"      : verified,
+                        "Is Bussiness?"     : business,
+                        "Media Count"       : media_count,
                     })
                     print(f"Added {username}")
                     time.sleep(3)
@@ -144,8 +174,15 @@ class InsClawer:
         biography           = None 
         location            = None
         follower_count      = None 
+        is_privated         = None
+        is_verified         = None
+        media_count         = None
         following_count     = None
+        is_businessed       = None
         
+        private             = None
+        verified            = None 
+        business            = None
         location_name       = None
         language            = ""
         
@@ -172,8 +209,12 @@ class InsClawer:
             
             ## Lấy thông tin Is Private?", "Is Verified?": None, "Media Count", "Following Count"
             more_data           = self.client.user_info_by_username(username).dict()
+            is_privated         = more_data["is_private"]
+            is_verified         = more_data["is_verified"]
+            media_count         = more_data["media_count"]
             following_count     = more_data["following_count"]
             follower_count      = more_data["follower_count"]
+            is_businessed       = more_data["is_business"]
             
             email           = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', biography)
             phone           = re.findall(r'\b\d{10,11}\b', biography)
@@ -191,6 +232,20 @@ class InsClawer:
                 else:
                     language = "Others"
             
+            if is_privated == False:
+                private = "Yes"
+            else: 
+                private = "No"
+                
+            if is_verified == True:
+                verified = "Yes"
+            else: 
+                verified = "No"
+                
+            if is_businessed == True:
+                business = "Yes"
+            else: 
+                business = "No"
                 
             if username not in self.output:
                 if follower_count > 0:
@@ -208,6 +263,10 @@ class InsClawer:
                     "Following Count":      following_count,
                     "City":                 location_name,
                     "Language":             language,
+                    "Is Private?":          private,
+                    "Is Verified?":         verified,
+                    "Is Bussiness?":        business,
+                    "Media Count":          media_count,
                 })
                 print(f"Added {username}")
                 time.sleep(3)
@@ -219,7 +278,14 @@ class InsClawer:
         try:
             existing_data = pd.read_csv(file_path)
         except FileNotFoundError:
-            pass
+            # Tạo một tệp mới và tạo DataFrame trống
+            with open(file_path, 'w') as new_file:
+                pass
+            
+            df = pd.DataFrame()
+            
+            # Lưu DataFrame trống vào tệp mới tạo
+            df.to_csv(file_path, index=False)
 
         # Tạo DataFrame từ dữ liệu mới
         new_data = pd.DataFrame(self.output)
@@ -242,12 +308,25 @@ class InsClawer:
         # Ghi dữ liệu đã loại bỏ trùng lặp vào file CSV mới
         data.to_csv(file_path, index=False)
         
-    def savingOnlyEmailorPhone(self, file_path):
+    def savingOnlyEmailorPhone(self,backup_file_path, file_path):
         # Đọc dữ liệu từ tệp CSV gốc
-        df = pd.read_csv(file_path)
-        filtered_data = df.query('Email != "[]" or Phone != "[]"')
-        filtered_data.to_csv(file_path, index=False)
+        try:
+            df = pd.read_csv(backup_file_path)
+        except FileNotFoundError:
+            # Tạo một tệp mới và tạo DataFrame trống
+            with open(file_path, 'w') as new_file:
+                pass
+            
+            df = pd.DataFrame()
+            
+            # Lưu DataFrame trống vào tệp mới tạo
+            df.to_csv(file_path, index=False)
         
+        filtered_data = df.query('Email != "[]" or Phone != "[]"')
+        
+        filtered_data.to_csv(file_path, index=False, encoding='utf-8')
+        
+    
     
     
       
